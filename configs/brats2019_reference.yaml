@@ -1,0 +1,34 @@
+dataset: BraTS2019
+seed: 1234
+input_size: [192, 192]
+views: [axial, coronal, sagittal]
+splits:
+  scheme: five_fold_patient_level
+  train_pattern: "lists/BraTS2019/t{fold}.txt"
+  evaluation_pattern: "lists/BraTS2019/v{fold}.txt"
+  train_cases_per_fold: 268
+  evaluation_cases_per_fold: 67
+backbone:
+  epochs: 300
+  batch_size_slices: 36
+  learning_rate: 0.0003
+  weight_decay: 0.01
+directional_training:
+  axial_epochs: 150
+  coronal_epochs: 100
+  sagittal_epochs: 150
+  accumulation_steps: 4
+  gmm_switch_epoch_coronal: 60
+  gmm_boundary_ratios: [0.5, 0.8]
+  gmm_weight: 0.05
+  uncertainty_margin: 0.65
+inference:
+  fusion_weights: [1.2, 1.1, 1.0]
+  threshold: 0.5
+  et_min_size: 50
+  wt_min_size: 100
+  surface_dice_tolerance_voxels: 1.0
+provenance_note: >-
+  Values were recovered from local run configurations and current scripts.
+  Verify the final checkpoint metadata before declaring them the exact settings
+  for every reported table entry.

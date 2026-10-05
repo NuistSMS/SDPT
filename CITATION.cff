@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated manuscript."
+title: "Sequential Directional Prior Transfer for Multi-View 2.5D Brain Tumor Segmentation in Multimodal MRI"
+type: software
+authors:
+  - family-names: Yan
+    given-names: Xisheng
+  - family-names: Yang
+    given-names: Fan
+  - family-names: Pei
+    given-names: Xunlong
+  - family-names: Zhang
+    given-names: Zichen
+  - family-names: Chen
+    given-names: Yunjie
+  - family-names: Huang
+    given-names: Yan
+repository-code: "https://github.com/NuistSMS/SDPT"
+date-released: 2026-10-05

@@ -1,0 +1,14 @@
+name: sdpt
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.12.7
+  - pip
+  - pip:
+      - -r requirements.txt
+
+# The captured development environment used PyTorch 2.9.1 with CUDA 13.0.
+# Install a PyTorch/CUDA build supported by the target GPU before installing
+# the remaining packages when this exact combination is unavailable.

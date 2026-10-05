@@ -1,0 +1,36 @@
+dataset: BraTS2021
+seed: 1234
+input_size: [192, 192]
+views: [axial, coronal, sagittal]
+splits:
+  train: lists/BraTS2021/train.txt
+  validation: lists/BraTS2021/val.txt
+  test: lists/BraTS2021/test.txt
+  train_cases: 875
+  validation_cases: 125
+  test_cases: 251
+backbone:
+  epochs: 120
+  batch_size_slices: 36
+  learning_rate: 0.0003
+  weight_decay: 0.01
+directional_training:
+  axial_epochs: 150
+  coronal_epochs: 100
+  sagittal_epochs: 10
+  accumulation_steps: 4
+  gmm_switch_epoch_coronal: 60
+  gmm_switch_epoch_sagittal: 6
+  gmm_boundary_ratios: [0.5, 0.8]
+  gmm_weight: 0.05
+  uncertainty_margin: 0.65
+inference:
+  fusion_weights: [1.2, 1.1, 1.0]
+  threshold: 0.5
+  et_min_size: 50
+  wt_min_size: 100
+  surface_dice_tolerance_voxels: 1.0
+provenance_note: >-
+  Values were recovered from local run configurations and current scripts.
+  Verify the final checkpoint metadata before declaring them the exact settings
+  for every reported table entry.
