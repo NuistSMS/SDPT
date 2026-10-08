@@ -1,14 +1,54 @@
-# Sequential Directional Prior Transfer (SDPT)
+# ReDiAR: Sequential Directional Knowledge Reuse for Multimodal MRI Brain Tumor Segmentation
 
-Code and model assets for **Sequential Directional Prior Transfer for Multi-View 2.5D Brain Tumor Segmentation in Multimodal MRI**.
+Official code and reproducibility materials for the manuscript **“ReDiAR: Sequential Directional Knowledge Reuse for Multimodal MRI Brain Tumor Segmentation”**.
 
-SDPT transfers information sequentially from axial to coronal to sagittal views using direction-specific adapters, reconstructed Gaussian-mixture priors, view alignment, and uncertainty-aware fusion.
+**ReDiAR** stands for **Reusable Directional Information via Alignment and Routing**. It is a multi-view **2.5D brain tumor segmentation** framework that reuses information from already optimized MRI directions to guide the training of subsequent directions. Unlike methods based only on simultaneous multi-view feature fusion or final prediction averaging, ReDiAR follows a **forward-only axial → coronal → sagittal** training process with a shared Transformer backbone and direction-specific adapters.
 
-Repository: <https://github.com/NuistSMS/SDPT>
+Repository: <https://github.com/NuistSMS/ReDiAR>
+
+## Method overview
+
+ReDiAR organizes directional knowledge reuse as a dependent **Retain → Align → Route** process:
+
+1. **Retain — GMM-DFR priors.** Extract prediction-consistent, boundary-enriched features from previously optimized directions; summarize them into scale-specific, semantic-group-conditioned Gaussian-mixture prior banks; and reconstruct compact prior tokens when training a later direction.
+2. **Align — View Translator (VT).** Map active-view representations into a fusion space compatible with projected source-direction prior tokens, allowing cross-attention to retrieve relevant directional knowledge.
+3. **Route — Uncertainty-Aware Gate (UAG).** Inject prior-conditioned responses only at uncertain spatial queries while preserving reliable current-view responses elsewhere.
+
+The method employs **LKA-based direction-specific adapters** within a shared backbone. The original LKA operator, Gaussian-mixture modeling, and uncertainty estimation are established components; the manuscript's central contribution is their coordinated use for **sequential directional knowledge reuse**.
+
+```text
+Shared backbone initialization
+          |
+          v
+ Axial adaptation ───► Fit axial GMM-DFR prior banks
+          |                          |
+          v                          v
+ Coronal adaptation ◄────── Reconstructed axial priors
+     (VT + UAG)
+          |
+          v
+ Fit coronal GMM-DFR prior banks
+          |
+          v
+ Sagittal adaptation ◄──── Reconstructed axial + coronal priors
+     (VT + UAG)
+          |
+          v
+ Three-view volume reconstruction and weighted probability fusion
+```
+
+### Results reported in the manuscript
+
+| Dataset | Mean DSC (%) | Mean SDC (%) |
+|---|---:|---:|
+| BraTS2019 | **84.49** | **75.77** |
+| BraTS2021 | **90.39** | **86.46** |
+
+In the controlled three-view study, sequential prior reuse improves mean DSC by **1.90 percentage points** and mean SDC by **2.71 percentage points** over the same three-view averaging rule without prior transfer. These are **manuscript-reported results**, not values independently reproduced by this README's example command. The supplied checkpoint package covers only one BraTS2019 split; it cannot by itself reproduce the complete five-fold BraTS2019 or BraTS2021 benchmark tables.
 
 ## Package contents
 
-This README describes the files in `SDPT_PAA_Reproducibility_Package`. Run the commands from that directory, or from the repository root after uploading these contents.
+This README describes the files in the provided `SDPT_PAA_Reproducibility_Package` snapshot. That folder name is a **legacy release-directory name**, not the current paper title. Run commands from that directory (if retained) or from the ReDiAR repository root after uploading these contents. File and command names below deliberately match the supplied implementation.
 
 ```text
 SDPT_PAA_Reproducibility_Package/
@@ -28,7 +68,7 @@ SDPT_PAA_Reproducibility_Package/
 ├── utils.py
 ├── networks/
 │   ├── MISSFOREMR.py                # backbone model
-│   ├── SDPT.py                      # directional SDPT model
+│   ├── SDPT.py                      # directional ReDiAR implementation (legacy filename)
 │   ├── segformer.py
 │   └── __init__.py
 ├── datasets/
@@ -64,11 +104,11 @@ SDPT_PAA_Reproducibility_Package/
         └── coronal_ratio0.8.pkl
 ```
 
-The spellings `train-secoce.py`, `trian-third.py`, and `model_out_aixl_19` are the actual filenames. Use them exactly as shown.
+**Legacy filenames:** `networks/SDPT.py`, `train-secoce.py`, `trian-third.py`, `model_out_aixl_19`, and the `sdpt` Conda environment name are retained for compatibility with the provided scripts and environment file. **ReDiAR is the manuscript and project name; do not rename these code paths without updating imports and references.**
 
 Three BraTS2019 directional checkpoint files, eight fitted GMM banks, and the GMM-fitting entry point are included. Raw MRI data, BraTS2021 checkpoints, a standalone backbone checkpoint, and archived evaluation results are not included in this folder. There is no `scripts/` or `results/` directory in this release.
 
-The backbone is imported from `networks.MISSFOREMR`, and all directional training, evaluation, and GMM fitting import from `networks.SDPT`. Both modules retain the class name `MISSFormer`; the filename alignment does not change network parameters or checkpoint keys. `MISSFOREMR.py` is the exact filename, including its spelling.
+The backbone is imported from `networks.MISSFOREMR`, and directional training, evaluation, and GMM fitting import the ReDiAR implementation from the legacy path `networks.SDPT`. Both modules retain the class name `MISSFormer`; the paper-name update does **not** change network parameters, import paths, or checkpoint keys. `MISSFOREMR.py` is the exact filename, including its spelling.
 
 ## Environment
 
@@ -160,9 +200,11 @@ For BraTS2021, use `lists/BraTS2021/test.txt` and its two ratio-0.8 banks, toget
 Training follows this order:
 
 ```text
-Shared backbone → axial adaptation → fit axial banks
-                → coronal adaptation → fit coronal banks
-                → sagittal adaptation → three-view evaluation
+Shared backbone → axial adaptation → fit axial GMM-DFR banks
+                → coronal adaptation with axial priors (VT + UAG)
+                → fit coronal GMM-DFR banks
+                → sagittal adaptation with axial and coronal priors (VT + UAG)
+                → three-view evaluation
 ```
 
 The YAML files under `configs/` document reference settings; the training programs do not load them automatically. Supply the relevant command-line arguments explicitly. The examples below use the complete BraTS2021 train/validation lists. Paths under `/path/to/` denote checkpoints that must be supplied or selected from a preceding training run.
@@ -266,6 +308,23 @@ GMM banks are explicitly allowed by `.gitignore`. Preserve their directory names
 
 ## Citation and third-party code
 
-Citation metadata are in `CITATION.cff`. Cite the associated paper once a published bibliographic record is available.
+**Manuscript title:** *ReDiAR: Sequential Directional Knowledge Reuse for Multimodal MRI Brain Tumor Segmentation*
+
+**Authors:** Xisheng Yan, Fan Yang, Zichen Zhang, and Yunjie Chen.
+
+A provisional BibTeX entry is provided below for the manuscript. Replace this entry with the final publication record (venue, year, volume, pages, DOI) when available:
+
+```bibtex
+@misc{yan2026rediar,
+  title  = {ReDiAR: Sequential Directional Knowledge Reuse for Multimodal MRI Brain Tumor Segmentation},
+  author = {Yan, Xisheng and Yang, Fan and Zhang, Zichen and Chen, Yunjie},
+  year   = {2026},
+  note   = {Manuscript},
+  url    = {https://github.com/NuistSMS/ReDiAR}
+}
+```
+
+`CITATION.cff` is a separate package file. Before publishing a release, check that its title and authors match the updated manuscript; editing this README does not automatically modify `CITATION.cff`.
 
 The network implementation builds on MISSFormer. See `THIRD_PARTY_NOTICE.md` for attribution and redistribution terms. BraTS images and labels are not included.
+
